@@ -1,0 +1,59 @@
+name: Cypress Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Install Node.js
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Run Cypress tests
+      - name: Run Cypress
+        uses: cypress-io/github-action@v5
+        id: cypress
+        with:
+          build: npm run build # if you need to build your app first
+          start: npm start # command to start your server
+          wait-on: "http://localhost:3000" # adjust port as needed
+          # Enable screenshot and video capture on failure
+          config: video=true, screenshotOnRunFailure=true
+
+      # Upload screenshots on failure
+      - name: Upload screenshots
+        if: failure() && steps.cypress.outcome == 'failure'
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      # Upload videos on failure
+      - name: Upload videos
+        if: failure() && steps.cypress.outcome == 'failure'
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-videos
+          path: cypress/videos
+
+      # Optional: Upload test results as artifact
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-test-results
+          path: cypress/results
